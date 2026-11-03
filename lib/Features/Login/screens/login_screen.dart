@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:erp_app/Features/Dashboard/screens/dashboard_screen.dart';
+import 'package:erp_app/Features/Dashboard/dashboard_screen.dart';
 import 'package:erp_app/Features/Forgot%20Password/screens/forgot_password_screen.dart';
 import 'package:erp_app/Features/Login/BLoc/login_bloc.dart';
 import 'package:erp_app/Features/Login/BLoc/login_event.dart';
@@ -9,9 +9,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:erp_app/Core/theme/app_theme.dart';
 import 'package:erp_app/Core/theme/system_theme_wrapper.dart';
 import 'package:lottie/lottie.dart';
-import 'package:erp_app/Features/Dashboard/screens/admin_dashboard_screen.dart';
-import 'package:erp_app/Features/Dashboard/screens/student_dashboard_screen.dart';
-import 'package:erp_app/Features/Dashboard/screens/faculty_dashboard_screen.dart';
+import 'package:erp_app/Features/Dashboard/Admin%20Dashboard/screens/admin_dashboard_screen.dart';
+import 'package:erp_app/Features/Dashboard/Student%20Dashboard/screens/student_dashboard_screen.dart';
+import 'package:erp_app/Features/Dashboard/Faculty%20Dashboard/screens/faculty_home_menu_screen.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
   } else if (state.roleName == 'STUDENT') {
     screen = const StudentDashboardScreen();
   } else if (state.roleName == 'FACULTY') {
-    screen = const FacultyDashboardScreen();
+    screen = const FacultyHomeMenuScreen();
   } else {
     screen = const DashboardScreen(); // fallback for unknown role
   }
