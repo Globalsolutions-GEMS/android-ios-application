@@ -73,15 +73,22 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       await _apiClient.saveLoginTokens(
         token: loginResponse.token,
         refreshToken: loginResponse.refreshToken,
+        userId: loginResponse.userId,
+        userName: loginResponse.userName,
+        lastLoginTime: loginResponse.lastLoginTime,
+        instituteName: loginResponse.institute?.instituteName,
+        instituteAddress: loginResponse.institute?.instituteAddress,
       );
       emit(
-  LoginSuccess(
-    loginResponse.message,
-    roleName: loginResponse.role?.role.toUpperCase() ?? '',
-  ),
-);
+        LoginSuccess(
+          loginResponse.message,
+          roleName: loginResponse.role?.role.toUpperCase() ?? '',
+        ),
+      );
     } catch (error) {
       // Client-side/unexpected error
+      print('Login error: $error');
+      print('Stack trace: ${StackTrace.current}');
       emit(const LoginFailure('Login failed. Please try again later.'));
     }
   }
