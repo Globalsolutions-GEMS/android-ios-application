@@ -53,4 +53,8 @@ class ApiEndPoints {
   static const String allAssignments = '/api/elearning-assignments/all';
   static String assignmentSubmissions(int assignmentId) => '/api/elearning-assignments/$assignmentId/submissions';
 
+  // Role & Module Permissions
+  static String roleMenus(int roleId) => '/menus/$roleId';
+  static String instituteModules(int instituteId) => '/api/institute-module/$instituteId';
+
 }

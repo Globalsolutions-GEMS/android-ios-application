@@ -23,6 +23,7 @@ class ApiClient {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       // return 'http://192.168.31.114:8080';
       return 'http://192.168.31.56:8081';
+      // return 'http://10.140.231.116:8081';
     }
     return 'http://localhost:8080';
   }
@@ -127,6 +128,8 @@ class ApiClient {
     String? lastLoginTime,
     String? instituteName,
     String? instituteAddress,
+    int? roleId,
+    int? instituteId,
   }) async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString('auth_token', token);
@@ -145,6 +148,12 @@ class ApiClient {
     }
     if (instituteAddress != null) {
       await preferences.setString('institute_address', instituteAddress);
+    }
+    if (roleId != null) {
+      await preferences.setInt('role_id', roleId);
+    }
+    if (instituteId != null) {
+      await preferences.setInt('institute_id', instituteId);
     }
   }
 
