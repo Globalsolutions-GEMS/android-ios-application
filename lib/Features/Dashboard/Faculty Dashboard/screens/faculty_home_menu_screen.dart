@@ -10,6 +10,9 @@ import 'package:erp_app/Features/Faculty/E-learning Workarea/screens/workarea_sc
 import 'package:erp_app/api_manager/api_client.dart';
 import 'package:erp_app/api_manager/api_endPoints.dart';
 import 'package:erp_app/Features/Faculty/E-learning Workarea/screens/subject_selection_screen.dart';
+import 'package:erp_app/Features/Faculty/Assignment/screens/assignment_list_screen.dart';
+import 'package:erp_app/Features/Faculty/Teaching plan/screens/teaching_plan_screen.dart';
+import 'package:erp_app/Features/Faculty/Announcement/screens/announcement_list_screen.dart';
 
 enum FacultyMenuItem {
   dashboard,
@@ -121,7 +124,7 @@ class _FacultyHomeMenuScreenState extends State<FacultyHomeMenuScreen> {
         }
       }
 
-      // Extract enabled modules (flatten arrays from response)
+    // Extract enabled modules (flatten arrays from response)
       final enabledModules = <String>{};
       if (modulesResponse.isSuccess && modulesResponse.body is List) {
         for (final item in modulesResponse.body as List) {
@@ -129,7 +132,7 @@ class _FacultyHomeMenuScreenState extends State<FacultyHomeMenuScreen> {
             final menuTitles = item['menuTitles'];
             if (menuTitles is List) {
               for (final title in menuTitles) {
-                if (title is String) {
+                if (title is String && title != 'Unknown Module') {
                   enabledModules.add(title);
                 }
               }
@@ -137,15 +140,17 @@ class _FacultyHomeMenuScreenState extends State<FacultyHomeMenuScreen> {
           }
         }
       }
+      // Check if module data is valid (not empty and not just "Unknown Module")
+      final hasValidModuleData = enabledModules.isNotEmpty;
 
       // Get ALL items from master config (no whitelist - matches web logic)
-      // Filter only by role permissions + institute modules
+      // Filter by role permissions + institute modules (if module data is valid)
       final filteredItems = mobileMenuItems.where((item) {
         final isRoleAllowed = allowedMenuIds.contains(item.menuUniqueId);
-        final isModuleEnabled = enabledModules.contains(item.module);
+        // If module data is invalid/empty, skip module check (fallback to role permissions only)
+        final isModuleEnabled = hasValidModuleData ? enabledModules.contains(item.module) : true;
         return isRoleAllowed && isModuleEnabled;
       }).toList();
-
       // Cache filtered action IDs for offline/error scenarios
       final filteredIds = filteredItems.map((a) => a.menuUniqueId.toString()).toList();
       await preferences.setStringList('cached_menu_ids', filteredIds);
@@ -462,17 +467,84 @@ class _FacultyHomeMenuScreenState extends State<FacultyHomeMenuScreen> {
       },
     );
   }
-
-  Widget _buildDashboardCard(double cardWidth) {
-    return SizedBox(
-      width: cardWidth,
-      child: _MenuCard(
-        title: 'Dashboard',
-        subtitle: 'Lectures and progress',
-        icon: Icons.space_dashboard_rounded,
-        color: const Color(0xFF7656E8),
-        tint: const Color(0xFFF5F3FF),
-        onTap: () => _navigateToRoute('/faculty-dashboard'),
+Widget _buildDashboardCard(double cardWidth) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () => _navigateToRoute('/faculty-dashboard'),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A0F172A),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7656E8),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.space_dashboard_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Lectures and progress',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Color(0xFF64748B),
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -784,18 +856,50 @@ class _FacultyHomeMenuScreenState extends State<FacultyHomeMenuScreen> {
   }
 
   void _onWorkAreaCardTap(WorkAreaItem item) {
-    if (item.page == 'teachingplan' || item.page == 'assignment') {
-      _openWorkAreaSubjects(moduleName: item.title);
+    if (item.page == 'teachingplan' ||
+        item.page == 'assignment' ||
+        item.page == 'annoucement') {
+      _openWorkAreaSubjects(moduleName: item.title, page: item.page);
     }
   }
 
-  void _openWorkAreaSubjects({required String moduleName}) {
+  void _openWorkAreaSubjects({
+    required String moduleName,
+    required String page,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SubjectSelectionScreen(
           moduleName: moduleName,
           onSubjectTap: (subject) {
+            if (page == 'assignment') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AssignmentListScreen(subject: subject),
+                ),
+              );
+              return;
+            }
+            if (page == 'teachingplan') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TeachingPlanScreen(subject: subject),
+                ),
+              );
+              return;
+            }
+            if (page == 'annoucement') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AnnouncementListScreen(subject: subject),
+                ),
+              );
+              return;
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('$moduleName for ${subject.subjectName}'),
@@ -898,5 +1002,3 @@ class _MenuCard extends StatelessWidget {
     );
   }
 }
-
-

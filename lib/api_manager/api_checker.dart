@@ -22,9 +22,16 @@ class ApiChecker {
   static String? checkApi(Response response) {
     if (response.isSuccess) return null;
 
+    // JSON error: {"message": "..."}
     if (response.body is Map<String, dynamic>) {
       final message = response.body['message'];
       if (message is String && message.isNotEmpty) return message;
+    }
+
+    // Plain text error from the server (for example 400 messages)
+    final text = response.bodyString.trim();
+    if (text.isNotEmpty && text.length <= 200 && !text.startsWith('<')) {
+      return text;
     }
 
     return response.statusText.isNotEmpty

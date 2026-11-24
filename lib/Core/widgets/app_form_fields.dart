@@ -159,7 +159,7 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: selected ? _primary.withOpacity(0.08) : null,
+      color: selected ? _primary.withValues(alpha: 0.08) : null,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
@@ -201,6 +201,7 @@ class AppPickerField extends StatelessWidget {
     this.icon = Icons.calendar_today_outlined,
     this.required = true,
     this.errorText,
+    this.enabled = true,
   });
 
   final String? label;
@@ -210,6 +211,7 @@ class AppPickerField extends StatelessWidget {
   final VoidCallback onTap;
   final bool required;
   final String? errorText;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +222,7 @@ class AppPickerField extends StatelessWidget {
       hint: hint,
       icon: icon,
       errorText: errorText,
+      enabled: enabled,
       onTap: (_) => onTap(),
     );
   }

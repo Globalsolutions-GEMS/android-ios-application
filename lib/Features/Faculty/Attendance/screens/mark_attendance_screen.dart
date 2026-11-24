@@ -1,9 +1,12 @@
+import 'package:erp_app/Core/Config/dashboard_menu_config.dart';
 import 'package:erp_app/Core/theme/app_theme.dart';
 import 'package:erp_app/Core/widgets/app_form_fields.dart';
+import 'package:erp_app/Core/widgets/quick_link_bookmark_button.dart';
 import 'package:erp_app/Features/Faculty/Attendance/Bloc/mark_attendance_bloc.dart';
 import 'package:erp_app/Features/Faculty/Attendance/Bloc/mark_attendance_event.dart';
 import 'package:erp_app/Features/Faculty/Attendance/Bloc/mark_attendance_state.dart';
 import 'package:erp_app/Features/Faculty/Attendance/model/mark_attendance_model.dart';
+import 'package:erp_app/Features/Faculty/Attendance/screens/qr_display_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -34,6 +37,9 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
   static const Color _border = Color(0xFFD5DAE5);
   static const Color _red = Color(0xFFDC2626);
 
+  // Space between form fields
+  static const double _gap = 12;
+
   static const List<String> _classTypes = [
     'Regular Lecture',
     'Extra Lecture',
@@ -57,9 +63,18 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF0F6),
       appBar: AppBar(
-        title: const Text('Mark Attendance'),
-        backgroundColor: AppTheme.primaryViolet,
-        foregroundColor: Colors.white,
+  title: const Text(
+    'Mark Attendance',
+    style: TextStyle(fontWeight: FontWeight.w600),
+  ),
+  backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: Colors.black,
+  actions: [
+    QuickLinkBookmarkButton(
+      menuUniqueId: menuIdOf('Attendance', 'Mark Attendance'),
+    ),
+  ],
       ),
       body: BlocConsumer<MarkAttendanceBloc, MarkAttendanceState>(
         // Fires once when a submit result arrives
@@ -108,7 +123,7 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
               : null;
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             children: [
               _card(
                 child: Column(
@@ -133,19 +148,44 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
                         _loadSubjects();
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: _gap),
 
-                    // Attendance date
-                    AppPickerField(
-                      label: 'Attendance Date',
-                      hint: 'Select date',
-                      text: _selectedDate == null
-                          ? null
-                          : _formatDate(_selectedDate!),
-                      errorText: _errors['date'],
-                      onTap: () => _pickDate(state.days),
+                    // Attendance date + default status in one row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: AppPickerField(
+                            label: 'Attendance Date',
+                            hint: 'Select date',
+                            text: _selectedDate == null
+                                ? null
+                                : _formatDate(_selectedDate!),
+                            errorText: _errors['date'],
+                            onTap: () => _pickDate(state.days),
+                          ),
+                        ),
+                        const SizedBox(width: _gap),
+                        Expanded(
+                          // Changing it resets all student statuses
+                          child: AppDropdown<int>(
+                            label: 'Default Status',
+                            hint: 'Select Status',
+                            required: false,
+                            value: statusId,
+                            items: [
+                              for (final s in state.statuses)
+                                AppDropdownItem(value: s.id, label: s.name),
+                            ],
+                            onChanged: (value) => setState(() {
+                              _selectedStatusId = value;
+                              _studentStatuses.clear();
+                            }),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: _gap),
 
                     // Class type
                     AppDropdown<String>(
@@ -162,24 +202,7 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
                         _errors.remove('classType');
                       }),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Default status (changing it resets all student statuses)
-                    AppDropdown<int>(
-                      label: 'Default Status',
-                      hint: 'Select Status',
-                      required: false,
-                      value: statusId,
-                      items: [
-                        for (final s in state.statuses)
-                          AppDropdownItem(value: s.id, label: s.name),
-                      ],
-                      onChanged: (value) => setState(() {
-                        _selectedStatusId = value;
-                        _studentStatuses.clear();
-                      }),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: _gap),
 
                     // Subject (from timetable API)
                     AppDropdown<int>(
@@ -191,7 +214,7 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
                           AppDropdownItem(value: i, label: groups[i].label),
                       ],
                       errorText: _errors['subject'] ?? state.groupsError,
-                                           onChanged: (value) {
+                      onChanged: (value) {
                         setState(() {
                           _selectedGroupIndex = value;
                           _selectedTopic = null;
@@ -213,7 +236,7 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
                         );
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: _gap),
 
                     // Topic with covered / required lectures
                     AppDropdown<int>(
@@ -251,9 +274,9 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
                         });
                       },
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 18),
 
-                    // Confirm / Cancel
+                    // Confirm / Generate QR
                     Row(
                       children: [
                         Expanded(
@@ -262,7 +285,7 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _primary,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -279,27 +302,46 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
                                 : const Text('Confirm'),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: _gap),
                         Expanded(
-                          child: OutlinedButton(
-                            onPressed: state.submitting ? null : _onCancel,
+                          child: OutlinedButton.icon(
+                            onPressed: state.submitting ? null : _onGenerateQr,
+                            icon: const Icon(Icons.qr_code_2, size: 20),
+                            label: const Text('Generate QR'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: _grey,
-                              side: const BorderSide(color: _border),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              foregroundColor: _primary,
+                              side: const BorderSide(color: _primary),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text('Cancel'),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+
+                    // Cancel
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: state.submitting ? null : _onCancel,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _grey,
+                          side: const BorderSide(color: _border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: _gap),
               _card(child: _studentSection(state, statusId)),
             ],
           );
@@ -361,12 +403,12 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
         const Divider(height: 1, color: _border),
         if (state.studentsLoading)
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 28),
+            padding: EdgeInsets.symmetric(vertical: 24),
             child: Center(child: CircularProgressIndicator()),
           )
         else if (state.studentsError != null)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 28),
+            padding: const EdgeInsets.symmetric(vertical: 24),
             child: Center(
               child: Text(
                 state.studentsError!,
@@ -377,7 +419,7 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
           )
         else if (students.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 28),
+            padding: const EdgeInsets.symmetric(vertical: 24),
             child: Center(
               child: Text(
                 _selectedGroupIndex == null
@@ -414,8 +456,8 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.fromLTRB(4, 6, 10, 6),
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.fromLTRB(2, 4, 10, 4),
       decoration: BoxDecoration(
         color: isMarked
             ? const Color(0xFFF1F5F9)
@@ -637,6 +679,39 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
     );
   }
 
+  // Opens the QR screen with the same form values (students scan to get the default status)
+  void _onGenerateQr() {
+    final state = context.read<MarkAttendanceBloc>().state;
+    if (state.submitting || !_validate(state)) return;
+
+    final defaultId = _selectedStatusId ?? _defaultStatusId(state.statuses);
+    if (defaultId == null) {
+      _snack('Please select a status');
+      return;
+    }
+
+    final group = state.groups[_selectedGroupIndex!];
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => QrDisplayScreen(
+          sessionId: _selectedSessionId!,
+          date: _formatDate(_selectedDate!),
+          lectureType: _selectedClassType!,
+          defaultStatusId: defaultId,
+          topicId: _effectiveTopic(state)!,
+          divisions: [
+            for (final d in group.divisions)
+              {
+                'subjectTeacherId': d.subjectTeacherId,
+                'sectionId': d.sectionId,
+                'attendanceSlotId': d.slotId,
+              },
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onCancel() {
     setState(() {
       _selectedSessionId = null;
@@ -663,16 +738,16 @@ class _MarkAttendanceViewState extends State<_MarkAttendanceView> {
 
   Widget _card({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),

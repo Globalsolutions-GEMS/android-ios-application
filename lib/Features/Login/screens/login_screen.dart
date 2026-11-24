@@ -12,7 +12,7 @@ import 'package:lottie/lottie.dart';
 import 'package:erp_app/Features/Dashboard/Admin%20Dashboard/screens/admin_dashboard_screen.dart';
 import 'package:erp_app/Features/Dashboard/Student%20Dashboard/screens/student_dashboard_screen.dart';
 import 'package:erp_app/Features/Dashboard/Faculty%20Dashboard/screens/faculty_home_menu_screen.dart';
-
+import 'package:erp_app/Core/widgets/app_exit_scope.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -69,24 +69,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     AppTheme.showThemedSnackBar(context, state.message),
                   );
                 }
-             if (state is LoginSuccess) {
-  const adminRoles = ['ADMIN', 'STAFF', 'SUPERADMIN'];
-  final Widget screen;
+                if (state is LoginSuccess) {
+                  const adminRoles = ['ADMIN', 'STAFF', 'SUPERADMIN'];
+                  final Widget screen;
 
-  if (adminRoles.contains(state.roleName)) {
-    screen = const AdminDashboardScreen();
-  } else if (state.roleName == 'STUDENT') {
-    screen = const StudentDashboardScreen();
-  } else if (state.roleName == 'FACULTY') {
-    screen = const FacultyHomeMenuScreen();
-  } else {
-    screen = const DashboardScreen(); // fallback for unknown role
-  }
+                  if (adminRoles.contains(state.roleName)) {
+                    screen = const AdminDashboardScreen();
+                  } else if (state.roleName == 'STUDENT') {
+                    screen = const StudentDashboardScreen();
+                  } else if (state.roleName == 'FACULTY') {
+                    screen = const FacultyHomeMenuScreen();
+                  } else {
+                    screen =
+                        const DashboardScreen(); // fallback for unknown role
+                  }
 
-  Navigator.of(context).pushReplacement(
-    MaterialPageRoute(builder: (_) => screen),
-  );
-}
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => AppExitScope(child: screen),
+                    ),
+                  );
+                }
               },
               builder:
                   (context, state) => AppTheme.buildSharedBackground(

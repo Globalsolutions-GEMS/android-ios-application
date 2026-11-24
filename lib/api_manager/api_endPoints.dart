@@ -23,6 +23,15 @@ class ApiEndPoints {
   static const String attendanceDetails = '/attendance-details';
   static const String markAttendance = '/mark-attendance';
 
+  // QR attendance
+  static const String qrSession = '/qr-attendance/session';
+  static const String qrActiveSession = '/qr-attendance/session/active';
+  static const String qrScan = '/qr-attendance/scan';
+  static String qrToken(int id) => '/qr-attendance/session/$id/token';
+  static String qrStatus(int id) => '/qr-attendance/session/$id/status';
+  static String qrStudents(int id) => '/qr-attendance/session/$id/students';
+  static String qrClose(int id) => '/qr-attendance/session/$id/close';
+
   //Lecture Overview
   static const String dashboardSummary = '/api/teacher/dashboard-summary';
   
@@ -52,6 +61,37 @@ class ApiEndPoints {
   static String testDistributions(int allotmentId) => '/api/test/all-distributions/$allotmentId';
   static const String allAssignments = '/api/elearning-assignments/all';
   static String assignmentSubmissions(int assignmentId) => '/api/elearning-assignments/$assignmentId/submissions';
+
+    // Assignment module (faculty)
+  static const String studentAdmissionsFilter = '/studentadmissions/filter';
+  static const String createAssignment = '/api/elearning-assignments/subject';
+  static const String downloadAssignment = '/api/elearning-assignments/download';
+  static String assignmentsBySubject(int subjectId) =>
+      '/api/elearning-assignments/$subjectId';
+  static String updateAssignment(int subjectId, int assignmentId) =>
+      '/api/elearning-assignments/$subjectId/$assignmentId';
+  static String assignmentPublishStatus(int id) =>
+      '/api/elearning-assignments/publish-status/$id';
+  static String publishAssignment(int id) =>
+      '/api/elearning-assignments/$id/publish';
+  static String assessmentSubmissions(int assignmentId) =>
+      '/api/assessment/submissions/$assignmentId';
+  static String approveSubmissions(int assignmentId) =>
+      '/api/assessment/approve/$assignmentId';
+
+  // Teaching Plan
+  static const String teachingPlan = '/api/teaching-plan';
+  static const String teachingPlanConflicts = '/api/teaching-plan/conflicts';
+  static String teachingPlanByAllotment(int allotmentId) =>
+      '/api/teaching-plan/allotment/$allotmentId';
+  static String teachingPlanById(int planId) => '/api/teaching-plan/$planId';
+  static const String teachingPlanBulkUpload = '/api/teaching-plan/bulk-upload';
+
+  // Announcements (faculty)
+  static const String announcements = '/api/announcements';
+  static String announcementById(int id) => '/api/announcements/$id';
+  static String announcementDownload(String fileName) =>
+      '/api/announcements/download/$fileName';
 
   // Role & Module Permissions
   static String roleMenus(int roleId) => '/menus/$roleId';

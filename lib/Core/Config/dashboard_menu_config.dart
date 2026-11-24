@@ -2205,3 +2205,8 @@ final Map<String, List<MobileMenuItem>> menuByModule = {
   for (final item in mobileMenuItems)
     item.module: [...(menuByModule[item.module] ?? []), item],
 };
+// Get menuUniqueId by module + title
+int menuIdOf(String module, String title) =>
+    mobileMenuItems
+        .firstWhere((m) => m.module == module && m.title == title)
+        .menuUniqueId;

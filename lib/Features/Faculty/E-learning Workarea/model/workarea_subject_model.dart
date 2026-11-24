@@ -37,7 +37,10 @@ class FacultyAllotment {
   final int teacherId;
   final String teacherName;
   final List<WorkAreaSection> sections;
-  final bool isActive;
+
+  /// Null when the API does not send an active flag; only an explicit
+  /// `false` marks the allotment inactive (matches web behavior).
+  final bool? isActive;
 
   const FacultyAllotment({
     required this.id,
@@ -54,7 +57,7 @@ class FacultyAllotment {
     required this.teacherId,
     required this.teacherName,
     required this.sections,
-    required this.isActive,
+    this.isActive,
   });
 
   factory FacultyAllotment.fromJson(Map<String, dynamic> json) {
@@ -85,7 +88,7 @@ class FacultyAllotment {
       teacherId: _toInt(json['teacherId']),
       teacherName: json['teacherName']?.toString() ?? '',
       sections: sections,
-      isActive: _toBool(json['isActive']),
+      isActive: _toBoolOrNull(json['isActive'] ?? json['active']),
     );
   }
 }
@@ -103,6 +106,7 @@ class WorkAreaSubject {
   final int courseId;
   final String courseName;
   final String? subjectCode;
+  final int academicSessionId;
   final List<int> sectionIds;
   final List<String> sectionNames;
 
@@ -114,6 +118,7 @@ class WorkAreaSubject {
     required this.courseId,
     required this.courseName,
     this.subjectCode,
+    required this.academicSessionId,
     this.sectionIds = const [],
     this.sectionNames = const [],
   });
@@ -131,6 +136,7 @@ class WorkAreaSubject {
       subjectCode: allotment.subjectCode.trim().isEmpty
           ? null
           : allotment.subjectCode.trim(),
+      academicSessionId: allotment.academicSessionId,
       sectionIds: activeSections.map((section) => section.id).toList(),
       sectionNames:
           activeSections.map((section) => section.name).toList(),
@@ -153,4 +159,9 @@ bool _toBool(dynamic value) {
   if (value is bool) return value;
   if (value is num) return value != 0;
   return value?.toString().toLowerCase() == 'true';
+}
+
+bool? _toBoolOrNull(dynamic value) {
+  if (value == null) return null;
+  return _toBool(value);
 }

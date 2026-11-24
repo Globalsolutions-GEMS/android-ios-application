@@ -40,7 +40,7 @@ class WorkAreaSubjectBloc
         return;
       }
 
-      final sessionId = await _resolveSessionId(preferences);
+      var sessionId = await _resolveSessionId(preferences);
       if (sessionId == null) {
         emit(const WorkAreaSubjectsLoaded(<WorkAreaSubject>[]));
         return;
@@ -53,17 +53,47 @@ class WorkAreaSubjectBloc
         return;
       }
 
-      final subjects = _extractList(response.body)
+      final rawList = _extractList(response.body);
+
+      final allotments = rawList
           .whereType<Map>()
-          .map((item) => FacultyAllotment.fromJson(Map<String, dynamic>.from(item)))
-          .where((allotment) =>
-              allotment.isActive &&
-              allotment.teacherId == userId &&
-              allotment.academicSessionId == sessionId &&
-              allotment.subjectId > 0 &&
-              allotment.subjectName.trim().isNotEmpty)
-          .map(WorkAreaSubject.fromAllotment)
+          .map((item) =>
+              FacultyAllotment.fromJson(Map<String, dynamic>.from(item)))
           .toList();
+
+      // Matches web: teacherId + academicSessionId + subjectId, and an
+      // allotment is excluded only when isActive is explicitly false.
+      List<WorkAreaSubject> filterBySession(int session) {
+        final subjects = <WorkAreaSubject>[];
+        for (final allotment in allotments) {
+          final keep = allotment.isActive != false &&
+              allotment.teacherId == userId &&
+              allotment.academicSessionId == session &&
+              allotment.subjectId > 0;
+          if (keep) {
+            subjects.add(WorkAreaSubject.fromAllotment(allotment));
+          }
+        }
+        return subjects;
+      }
+
+      var subjects = filterBySession(sessionId);
+
+      // Same fallback as the faculty dashboard: when the resolved session
+      // has no allotments for this teacher, switch to the session that
+      // actually has data (the saved academic_session_id can be stale).
+      if (subjects.isEmpty) {
+        final sessionWithData =
+            FacultyDashboardCalculator.findSessionWithData(
+          rawList,
+          userId: userId,
+        );
+        if (sessionWithData != null && sessionWithData != sessionId) {
+          sessionId = sessionWithData;
+          await preferences.setInt('academic_session_id', sessionId);
+          subjects = filterBySession(sessionId);
+        }
+      }
 
       emit(WorkAreaSubjectsLoaded(List.unmodifiable(subjects)));
     } catch (error) {

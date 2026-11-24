@@ -80,6 +80,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     await preferences.setInt('workarea_course_id', subject.courseId);
     await preferences.setString('workarea_course_name', subject.courseName);
     await preferences.setInt('workarea_allotment_id', subject.allotmentId);
+    await preferences.setInt('workarea_academic_session_id', subject.academicSessionId);
     await preferences.setStringList(
       'workarea_section_ids',
       subject.sectionIds.map((id) => id.toString()).toList(),
