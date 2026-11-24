@@ -26,7 +26,7 @@ class ProfileMenuButton extends StatelessWidget {
               builder: (_) => const _ProfilePopup(),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               child: ProfileAvatar(
                 name: profile?.name ?? 'User',
                 photoBase64: profile?.photoBase64,

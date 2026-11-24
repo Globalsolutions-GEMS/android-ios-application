@@ -6,6 +6,7 @@ import 'package:erp_app/api_manager/api_checker.dart';
 import 'package:erp_app/api_manager/api_endPoints.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
@@ -21,11 +22,17 @@ class ApiClient {
 
     // This is the development machine's Wi-Fi address for physical Android devices.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      // return 'http://192.168.31.114:8080';
-      return 'http://192.168.31.56:8081';
+      //return 'http://192.168.31.114:8080';
+       return 'http://192.168.31.56:8081';
     }
     return 'http://localhost:8080';
   }
+//   static String get baseUrl {
+//   if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+
+//   // Live server URL
+//   return 'https://backsuite360.globsolutions.in';
+// }
 
   static const Duration _timeout = Duration(seconds: 10);
 
@@ -127,6 +134,8 @@ class ApiClient {
     String? lastLoginTime,
     String? instituteName,
     String? instituteAddress,
+    int? roleId,
+    int? instituteId,
   }) async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString('auth_token', token);
@@ -145,6 +154,12 @@ class ApiClient {
     }
     if (instituteAddress != null) {
       await preferences.setString('institute_address', instituteAddress);
+    }
+    if (roleId != null) {
+      await preferences.setInt('role_id', roleId);
+    }
+    if (instituteId != null) {
+      await preferences.setInt('institute_id', instituteId);
     }
   }
 
@@ -257,6 +272,142 @@ class ApiClient {
       return _networkFailure('Unable to reach the server: ${error.message}');
     } catch (error) {
       return _networkFailure('Upload failed: $error');
+    }
+  }
+
+  /// Authenticated multipart request (POST or PUT).
+  /// Sends [json] as a text field [jsonField] plus an optional file.
+  /// When [jsonAsBlob] is true the JSON is sent as a file part named
+  /// [jsonField] with filename "blob" and Content-Type application/json
+  /// (the format the web app uses for announcement create/update).
+  Future<Response> sendMultipart(
+    String method,
+    String path, {
+    required String jsonField,
+    required Map<String, dynamic> json,
+    String fileField = 'attachment',
+    File? file,
+    bool jsonAsBlob = false,
+  }) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final token = preferences.getString('auth_token') ?? '';
+
+      final request = http.MultipartRequest(method, Uri.parse('$baseUrl$path'));
+      if (token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      if (jsonAsBlob) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            jsonField,
+            utf8.encode(jsonEncode(json)),
+            filename: 'blob',
+            contentType: MediaType('application', 'json'),
+          ),
+        );
+      } else {
+        request.fields[jsonField] = jsonEncode(json);
+      }
+      if (file != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(fileField, file.path),
+        );
+      }
+
+      final streamed = await request.send().timeout(
+        const Duration(seconds: 60),
+      );
+      final response = await http.Response.fromStream(streamed);
+      return _toResponse(response);
+    } on TimeoutException {
+      return _networkFailure('Request timed out. Please try again.');
+    } on http.ClientException catch (error) {
+      return _networkFailure('Unable to reach the server: ${error.message}');
+    } catch (error) {
+      return _networkFailure('Upload failed: $error');
+    }
+  }
+
+  /// Authenticated multipart upload that sends only the file field
+  /// (no JSON text field), e.g. teaching plan bulk upload.
+  Future<Response> uploadFile(
+    String path, {
+    required String fileField,
+    required File file,
+  }) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final token = preferences.getString('auth_token') ?? '';
+
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
+      if (token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.files.add(
+        await http.MultipartFile.fromPath(fileField, file.path),
+      );
+
+      final streamed = await request.send().timeout(
+        const Duration(seconds: 60),
+      );
+      final response = await http.Response.fromStream(streamed);
+      return _toResponse(response);
+    } on TimeoutException {
+      return _networkFailure('Request timed out. Please try again.');
+    } on http.ClientException catch (error) {
+      return _networkFailure('Unable to reach the server: ${error.message}');
+    } catch (error) {
+      return _networkFailure('Upload failed: $error');
+    }
+  }
+
+  /// Authenticated POST with a JSON list body (e.g. [1, 2, 3]).
+  Future<Response> postAuthList(String path, List<dynamic> body) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final token = preferences.getString('auth_token') ?? '';
+      final response = await _client
+          .post(
+            Uri.parse('$baseUrl$path'),
+            headers: {
+              'Content-Type': 'application/json',
+              if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
+      return _toResponse(response);
+    } on TimeoutException {
+      return _networkFailure('Request timed out. Please try again.');
+    } on http.ClientException catch (error) {
+      return _networkFailure('Unable to reach the server: ${error.message}');
+    } catch (error) {
+      return _networkFailure('Request failed: $error');
+    }
+  }
+
+  /// Authenticated file download. Returns the file bytes or throws.
+  Future<Uint8List> downloadBytes(
+    String path, {
+    Map<String, String>? query,
+  }) async {
+    final preferences = await SharedPreferences.getInstance();
+    final token = preferences.getString('auth_token') ?? '';
+    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
+    try {
+      final response = await _client
+          .get(
+            uri,
+            headers: {if (token.isNotEmpty) 'Authorization': 'Bearer $token'},
+          )
+          .timeout(const Duration(seconds: 60));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('Download failed (${response.statusCode}).');
+      }
+      return response.bodyBytes;
+    } on TimeoutException {
+      throw Exception('Download timed out. Please try again.');
     }
   }
 }

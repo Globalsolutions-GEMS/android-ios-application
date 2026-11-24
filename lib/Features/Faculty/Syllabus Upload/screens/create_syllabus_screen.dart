@@ -1,5 +1,7 @@
+import 'package:erp_app/Core/Config/dashboard_menu_config.dart';
 import 'package:erp_app/Core/theme/app_theme.dart';
 import 'package:erp_app/Core/widgets/app_form_fields.dart';
+import 'package:erp_app/Core/widgets/quick_link_bookmark_button.dart';
 import 'package:erp_app/Features/Faculty/Syllabus Upload/Bloc/create_syllabus_bloc.dart';
 import 'package:erp_app/Features/Faculty/Syllabus Upload/Bloc/create_syllabus_event.dart';
 import 'package:erp_app/Features/Faculty/Syllabus Upload/Bloc/create_syllabus_state.dart';
@@ -485,9 +487,18 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF0F6),
         appBar: AppBar(
-          backgroundColor: AppTheme.primaryViolet,
-          foregroundColor: Colors.white,
-          title: const Text('Create Syllabus'),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          foregroundColor: Colors.black,
+          title: const Text(
+            'Create Syllabus',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          actions: [
+            QuickLinkBookmarkButton(
+              menuUniqueId: menuIdOf('Academic', 'Create Syllabus'),
+            ),
+          ],
         ),
         body: SafeArea(
           top: false,

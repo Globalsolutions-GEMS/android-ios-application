@@ -6,6 +6,7 @@ import 'package:erp_app/Features/Dashboard/Faculty Dashboard/Bloc/faculty_dashbo
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:erp_app/Core/widgets/app_bottom_nav.dart';
+import 'package:erp_app/Core/widgets/app_confirm_dialog.dart';
 import 'package:erp_app/Core/widgets/profile_menu_button.dart';
 import 'package:erp_app/Features/Dashboard/Faculty Dashboard/Config/quick_link_menu.dart';
 import 'package:erp_app/Features/Dashboard/Faculty Dashboard/Model/faculty_dashboard_model.dart'
@@ -661,25 +662,17 @@ class _FacultyDashboardScreenState extends State<FacultyDashboardScreen> {
     String title,
   ) async {
     final bloc = context.read<FacultyDashboardBloc>();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Remove Quick Link'),
-            content: Text('Remove "$title" from your Quick Links?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Remove'),
-              ),
-            ],
-          ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      icon: Icons.bookmark_remove_outlined,
+      title: 'Remove Quick Link',
+      message: 'Remove "$title" from your Quick Links?',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      compact: true,
     );
-    if (confirmed == true) bloc.add(QuickLinkDeleteRequested(id));
+    if (confirmed) bloc.add(QuickLinkDeleteRequested(id));
   }
 
   Widget _scheduleBanner() {

@@ -78,6 +78,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         lastLoginTime: loginResponse.lastLoginTime,
         instituteName: loginResponse.institute?.instituteName,
         instituteAddress: loginResponse.institute?.instituteAddress,
+        roleId: loginResponse.role?.id,
+        instituteId: loginResponse.institute?.id,
       );
       emit(
         LoginSuccess(
